@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:di2_sqflite/models/article.dart';
 import 'package:di2_sqflite/models/itemList.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:sqflite/sqflite.dart';
@@ -52,6 +53,33 @@ list INTEGER
   Future<bool> addItems(String text) async {
     Database db = await database;
     await db.insert('list', {"name": text});
+    return true;
+  }
+
+// function pour afficher les articles d'un lkst
+  Future<List<Article>> articleFromId(int id) async {
+    Database db = await database;
+    List<Map<String, dynamic>> mapList =
+        await db.query('article', where: 'list=?', whereArgs: [id]);
+    return mapList.map((map) => Article.fromMap(map)).toList();
+  }
+
+//function qui permet d'ajouter ou de modifier une article en verifiant l'existance de l'article
+  Future<bool> upsert(Article article) async {
+    Database db = await database;
+    (article.id == null)
+        ? article.id = await db.insert('article', article.toMap())
+        : await db.update('article', article.toMap(),
+            where: 'id =?', whereArgs: [article.id]);
+    return true;
+  }
+
+  //supprimer liste et article associes
+  Future<bool> removeItem(Itemlist itemList) async {
+    Database db = await database;
+    await db.delete('list', where: 'id = ?', whereArgs: [itemList.id]);
+    //supprimer les atrticle associe a la list
+    await db.delete('article', where: 'list = ?', whereArgs: [itemList.id]);
     return true;
   }
 }
